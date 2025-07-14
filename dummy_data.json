@@ -1,0 +1,14 @@
+[
+  {
+    "question": "Wi-Fi çalışmıyor",
+    "answer": "Modemi kapatıp açmayı deneyin ve ağ ayarlarını kontrol edin."
+  },
+  {
+    "question": "Outlook açılmıyor",
+    "answer": "Outlook önbelleğini temizleyin ve yeniden başlatın."
+  },
+  {
+    "question": "Bilgisayar açılmıyor",
+    "answer": "Güç kablosunun bağlı olduğundan ve adaptörün çalıştığından emin olun."
+  }
+]
