@@ -1,28 +1,172 @@
 import React, { useState } from "react";
+import { MdDarkMode, MdLightMode, MdChevronLeft, MdChevronRight } from "react-icons/md";
 
 function Chat() {
   const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [recentChats, setRecentChats] = useState([]);
+  const [activeChatIdx, setActiveChatIdx] = useState(0);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [darkMode, setDarkMode] = useState(true);
 
-  const askGemini = async () => {
+  // Yeni sohbet başlat
+  const startNewChat = () => {
+    setRecentChats([
+      ...recentChats,
+      { messages: [], title: `Chat ${recentChats.length + 1}` }
+    ]);
+    setActiveChatIdx(recentChats.length);
+    setMessages([]);
+    setQuestion("");
+  };
+
+  // Aktif sohbeti değiştir
+  const selectChat = (idx) => {
+    setActiveChatIdx(idx);
+    setMessages(recentChats[idx].messages);
+    setQuestion("");
+  };
+
+  const askQuestion = async () => {
+    const newMessages = [...messages, { role: "user", content: question }];
     const res = await fetch("http://localhost:8000/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ question, messages: newMessages }),
     });
     const data = await res.json();
-    setAnswer(data.response);
+    // Bot cevabını da geçmişe ekle
+    const updatedMessages = [...newMessages, { role: "assistant", content: data.response }];
+    setMessages(updatedMessages);
+    setQuestion("");
+    // Recent chat'i güncelle
+    const updatedChats = [...recentChats];
+    updatedChats[activeChatIdx] = {
+      ...updatedChats[activeChatIdx],
+      messages: updatedMessages,
+      title: updatedMessages.find(m => m.role === "user")?.content?.slice(0, 20) || `Chat ${activeChatIdx + 1}`
+    };
+    setRecentChats(updatedChats);
   };
 
+  // Tema renkleri
+  const theme = darkMode
+    ? {
+        bg: "#181818",
+        fg: "#eee",
+        sidebarBg: "#222",
+        accent: "#b2f7ef",
+        inputBg: "#181818",
+        userMsgBg: "#14532d",
+        userMsgFg: "#fff",
+        botMsgBg: "#333",
+        botMsgFg: "#b2f7ef",
+        btnBg: "#14532d",
+        btnFg: "#fff"
+      }
+    : {
+        bg: "#f7f7f7",
+        fg: "#222",
+        sidebarBg: "#e3e3e3",
+        accent: "#14532d",
+        inputBg: "#fff",
+        userMsgBg: "#b2f7ef",
+        userMsgFg: "#222",
+        botMsgBg: "#e3e3e3",
+        botMsgFg: "#14532d",
+        btnBg: "#b2f7ef",
+        btnFg: "#222"
+      };
+
   return (
-    <div>
-      <input
-        value={question}
-        onChange={(e) => setQuestion(e.target.value)}
-        placeholder="Soru sor..."
-      />
-      <button onClick={askGemini}>Sor</button>
-      <p><strong>Cevap:</strong> {answer}</p>
+    <div style={{ display: "flex", height: "100vh", background: theme.bg, color: theme.fg, fontFamily: "sans-serif", transition: "background 0.3s, color 0.3s" }}>
+      {/* Sağ üstte dark/light mode ikonu */}
+      <div style={{ position: "absolute", top: 24, right: 32, zIndex: 10 }}>
+        <button onClick={() => setDarkMode(!darkMode)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "2rem", display: "flex", alignItems: "center" }} title={darkMode ? "Light Mode" : "Dark Mode"}>
+          {darkMode ? <MdLightMode style={{ color: "#fff" }} /> : <MdDarkMode style={{ color: "#000" }} />}
+        </button>
+      </div>
+      {/* Sol Menü: Recent Chats */}
+      {showSidebar && (
+        <div style={{ width: "260px", background: theme.sidebarBg, padding: "1rem", borderRight: `1px solid ${darkMode ? "#333" : "#ccc"}`, position: "relative" }}>
+          {/* Sidebar aç/kapa okunu buraya taşıdık */}
+          <div style={{ position: "absolute", top: 10, right: 10, zIndex: 10 }}>
+            <button onClick={() => setShowSidebar(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "2rem", display: "flex", alignItems: "center" }} title="Hide Chats">
+              <MdChevronLeft style={{ color: darkMode ? "#fff" : "#000" }} />
+            </button>
+          </div>
+          <h3 style={{ marginBottom: "1rem", color: theme.accent }}>Recent Chats</h3>
+          <button onClick={startNewChat} style={{ width: "100%", padding: "0.5rem", marginBottom: "1rem", background: theme.botMsgBg, color: theme.accent, border: "none", borderRadius: "6px", cursor: "pointer" }}>+ New Chat</button>
+          {recentChats.length === 0 && <p style={{ color: darkMode ? "#888" : "#666" }}>No chats yet.</p>}
+          <ul style={{ listStyle: "none", padding: 0 }}>
+            {recentChats.map((chat, idx) => (
+              <li key={idx}>
+                <button
+                  onClick={() => selectChat(idx)}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "0.5rem",
+                    marginBottom: "0.5rem",
+                    background: idx === activeChatIdx ? theme.accent : theme.botMsgBg,
+                    color: idx === activeChatIdx ? theme.sidebarBg : theme.accent,
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer"
+                  }}
+                >
+                  {chat.title}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {/* Sol üstte sidebar açma okunu sadece kapalıyken göster */}
+      {!showSidebar && (
+        <div style={{ position: "absolute", top: 28, left: 12, zIndex: 10 }}>
+          <button onClick={() => setShowSidebar(true)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "2rem", display: "flex", alignItems: "center" }} title="Show Chats">
+            <MdChevronRight style={{ color: darkMode ? "#fff" : "#000" }} />
+          </button>
+        </div>
+      )}
+      {/* Sağ: Chat Alanı */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "2rem" }}>
+        <div style={{ width: "100%", maxWidth: "600px", background: theme.botMsgBg, borderRadius: "12px", padding: "2rem", minHeight: "60vh", boxShadow: darkMode ? "0 2px 16px #0002" : "0 2px 16px #ccc2" }}>
+          {/* Sohbet geçmişi */}
+          <div style={{ marginTop: "2rem" }}>
+            {messages.length === 0 && <p style={{ color: darkMode ? "#888" : "#666" }}>Henüz mesaj yok.</p>}
+            {messages.map((msg, idx) => (
+              <div key={idx} style={{ marginBottom: "1rem", display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
+                <div style={{
+                  background: msg.role === "user" ? theme.userMsgBg : theme.botMsgBg,
+                  color: msg.role === "user" ? theme.userMsgFg : theme.botMsgFg,
+                  padding: "0.75rem 1.2rem",
+                  borderRadius: "18px",
+                  maxWidth: "70%",
+                  boxShadow: darkMode ? "0 1px 6px #0001" : "0 1px 6px #ccc1"
+                }}>
+                  <strong style={{ fontSize: "0.9em" }}>{msg.role === "user" ? "User" : "Chatbot"}</strong><br />
+                  {msg.content}
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Soru sorma alanı */}
+          <div style={{ marginTop: "2rem", display: "flex", alignItems: "center" }}>
+            <input
+              style={{ padding: "0.75rem", width: "100%", borderRadius: "8px", border: "none", background: theme.inputBg, color: theme.accent, marginRight: "1rem" }}
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Type your message..."
+              onKeyDown={e => { if (e.key === "Enter") askQuestion(); }}
+            />
+            <button onClick={askQuestion} style={{ padding: "0.75rem 1.5rem", background: theme.btnBg, color: theme.btnFg, border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
