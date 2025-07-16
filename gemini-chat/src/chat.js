@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   MdDarkMode,
   MdLightMode,
   MdChevronLeft,
   MdChevronRight,
+  MdClose,
+  MdMenu,
 } from "react-icons/md";
 
 function Chat() {
@@ -13,6 +15,24 @@ function Chat() {
   const [activeChatIdx, setActiveChatIdx] = useState(0);
   const [showSidebar, setShowSidebar] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check screen size and set mobile state
+  useEffect(() => {
+    const checkScreenSize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setShowSidebar(false); // Hide sidebar on mobile by default
+      } else {
+        setShowSidebar(true); // Show sidebar on desktop by default
+      }
+    };
+
+    checkScreenSize();
+    window.addEventListener("resize", checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
 
   // Yeni sohbet başlat
   const startNewChat = () => {
@@ -99,6 +119,22 @@ function Chat() {
         transition: "background 0.3s, color 0.3s",
       }}
     >
+      {/* Mobile overlay when sidebar is open */}
+      {isMobile && showSidebar && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.5)",
+            zIndex: 9,
+          }}
+          onClick={() => setShowSidebar(false)}
+        />
+      )}
+
       {/* Sağ üstte dark/light mode ikonu */}
       <div style={{ position: "absolute", top: 24, right: 32, zIndex: 10 }}>
         <button
@@ -127,12 +163,16 @@ function Chat() {
           width: showSidebar ? "240px" : "0",
           background: theme.sidebarBg,
           borderRight: `1px solid ${darkMode ? "#333" : "#ccc"}`,
-          position: "relative",
+          position: isMobile ? "fixed" : "relative",
+          top: isMobile ? 0 : "auto",
+          left: isMobile ? 0 : "auto",
+          height: isMobile ? "100vh" : "auto",
+          zIndex: isMobile ? 10 : "auto",
           transition: "width 0.3s ease-in-out",
           display: "flex",
           flexDirection: "column",
-          overflow: "hidden", // Prevent overflow when collapsed
-          flexShrink: 0, // Prevent shrinking
+          overflow: "hidden",
+          flexShrink: 0,
         }}
       >
         {/* Content wrapper with fixed width */}
@@ -152,8 +192,8 @@ function Chat() {
           <div
             style={{
               position: "absolute",
-              top: 10,
-              right: -10,
+              top: 28,
+              right: 5,
               zIndex: 10,
             }}
           >
@@ -170,7 +210,11 @@ function Chat() {
               }}
               title="Hide Chats"
             >
-              <MdChevronLeft style={{ color: darkMode ? "#fff" : "#000" }} />
+              {isMobile ? (
+                <MdClose style={{ color: darkMode ? "#fff" : "#000" }} />
+              ) : (
+                <MdChevronLeft style={{ color: darkMode ? "#fff" : "#000" }} />
+              )}
             </button>
           </div>
           <h3 style={{ marginBottom: "1rem", color: theme.accent }}>
@@ -222,24 +266,36 @@ function Chat() {
       </div>
 
       {/* Sol üstte sidebar açma okunu sadece kapalıyken göster */}
-      {!showSidebar && (
-        <div style={{ position: "absolute", top: 28, left: 12, zIndex: 10 }}>
-          <button
-            onClick={() => setShowSidebar(true)}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "2rem",
-              display: "flex",
-              alignItems: "center",
-            }}
-            title="Show Chats"
-          >
+      <div
+        style={{
+          position: "absolute",
+          top: 28,
+          left: 12,
+          zIndex: 10,
+          opacity: showSidebar ? 0 : 1,
+          transition: "opacity 0.3s ease-in-out",
+          pointerEvents: showSidebar ? "none" : "auto",
+        }}
+      >
+        <button
+          onClick={() => setShowSidebar(true)}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontSize: "2rem",
+            display: "flex",
+            alignItems: "center",
+          }}
+          title="Show Chats"
+        >
+          {isMobile ? (
+            <MdMenu style={{ color: darkMode ? "#fff" : "#000" }} />
+          ) : (
             <MdChevronRight style={{ color: darkMode ? "#fff" : "#000" }} />
-          </button>
-        </div>
-      )}
+          )}
+        </button>
+      </div>
 
       {/* Sağ: Chat Alanı */}
       <div
@@ -250,7 +306,9 @@ function Chat() {
           alignItems: "center",
           position: "relative",
           justifyContent: "flex-start",
-          padding: "2rem",
+          padding: isMobile ? "1rem" : "2rem",
+          marginTop: isMobile ? "4rem" : "0",
+          marginLeft: isMobile && showSidebar ? 0 : 0, // No margin shift on mobile
         }}
       >
         <div
