@@ -12,8 +12,6 @@ function Chat() {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
-
-
   const askQuestion = async () => {
     if (!question.trim()) return;
     const newMessages = [...messages, { role: "user", content: question }];
@@ -27,7 +25,10 @@ function Chat() {
         body: JSON.stringify({ question, messages: newMessages }),
       });
       const data = await res.json();
-      const updatedMessages = [...newMessages, { role: "assistant", content: data.response }];
+      const updatedMessages = [
+        ...newMessages,
+        { role: "assistant", content: data.response },
+      ];
       setMessages(updatedMessages);
     } finally {
       setIsTyping(false);
@@ -54,7 +55,7 @@ function Chat() {
         botMsgBg: "#333",
         botMsgFg: "#b2f7ef",
         btnBg: "#14532d",
-        btnFg: "#fff"
+        btnFg: "#fff",
       }
     : {
         bg: "#f7f7f7",
@@ -67,73 +68,204 @@ function Chat() {
         botMsgBg: "#e3e3e3",
         botMsgFg: "#14532d",
         btnBg: "#b2f7ef",
-        btnFg: "#222"
+        btnFg: "#222",
       };
 
   return (
-    <div style={{ minHeight: "100vh", background: theme.bg, color: theme.fg, fontFamily: "sans-serif", transition: "background 0.3s, color 0.3s", display: "flex", flexDirection: "column" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: theme.bg,
+        color: theme.fg,
+        fontFamily: "sans-serif",
+        transition: "background 0.3s, color 0.3s",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       {/* Sağ üstte dark/light mode ikonu */}
       <div style={{ position: "absolute", top: 24, right: 32, zIndex: 10 }}>
-        <button onClick={() => setDarkMode(!darkMode)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "2rem", display: "flex", alignItems: "center" }} title={darkMode ? "Light Mode" : "Dark Mode"}>
-          {darkMode ? <MdLightMode style={{ color: "#fff" }} /> : <MdDarkMode style={{ color: "#000" }} />}
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontSize: "2rem",
+            display: "flex",
+            alignItems: "center",
+          }}
+          title={darkMode ? "Light Mode" : "Dark Mode"}
+        >
+          {darkMode ? (
+            <MdLightMode style={{ color: "#fff" }} />
+          ) : (
+            <MdDarkMode style={{ color: "#000" }} />
+          )}
         </button>
       </div>
       {/* Chat Başlığı */}
-      <div style={{ textAlign: "center", marginTop: "5rem", marginBottom: "0.5rem" }}>
-        <h2 style={{ fontWeight: 700, fontSize: "2rem", letterSpacing: "-1px", color: theme.accent, margin: 0 }}>UME Chatbot</h2>
+      <div
+        style={{
+          textAlign: "center",
+          marginTop: "5rem",
+          marginBottom: "0.5rem",
+        }}
+      >
+        <h2
+          style={{
+            fontWeight: 700,
+            fontSize: "2rem",
+            letterSpacing: "-1px",
+            color: theme.accent,
+            margin: 0,
+          }}
+        >
+          UME Chatbot
+        </h2>
       </div>
       {/* Chat Alanı */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
-        <div style={{ width: "100%", maxWidth: "600px", background: theme.botMsgBg, borderRadius: "12px", padding: "2rem", minHeight: "60vh", boxShadow: darkMode ? "0 2px 16px #0002" : "0 2px 16px #ccc2", display: "flex", flexDirection: "column" }}>
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "2rem",
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            maxWidth: "600px",
+            background: theme.botMsgBg,
+            borderRadius: "12px",
+            padding: "2rem",
+            minHeight: "60vh",
+            boxShadow: darkMode ? "0 2px 16px #0002" : "0 2px 16px #ccc2",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           {/* Sohbet geçmişi */}
           <div
-            style={{ marginTop: "2rem", flex: 1, overflowY: "auto", maxHeight: "50vh", paddingRight: "24px" }}
+            style={{
+              marginTop: "2rem",
+              flex: 1,
+              overflowY: "auto",
+              maxHeight: "50vh",
+              paddingRight: "24px",
+            }}
             className="chat-scroll-area"
           >
-            {messages.length === 0 && <p style={{ color: darkMode ? "#888" : "#666" }}>Henüz mesaj yok.</p>}
+            {messages.length === 0 && (
+              <p style={{ color: darkMode ? "#888" : "#666" }}>
+                Henüz mesaj yok.
+              </p>
+            )}
             {messages.map((msg, idx) => (
-              <div key={idx} style={{ marginBottom: "1rem", display: "flex", alignItems: "flex-end", justifyContent: msg.role === "user" ? "flex-end" : "flex-start", paddingRight: msg.role === "user" ? 0 : 0 }}>
-                {msg.role === "assistant" && (
-                  <span style={{ marginRight: 8, fontSize: "1.7rem", color: theme.accent, display: "flex", alignItems: "center" }}><FaRobot /></span>
-                )}
-                <div style={{
-                  background: msg.role === "user" ? theme.userMsgBg : theme.botMsgBg,
-                  color: msg.role === "user" ? theme.userMsgFg : theme.botMsgFg,
-                  padding: "0.75rem 1.2rem",
-                  borderRadius: "18px",
-                  maxWidth: "70%",
-                  boxShadow: darkMode ? "0 1px 6px #0001" : "0 1px 6px #ccc1",
+              <div
+                key={idx}
+                style={{
+                  marginBottom: "1rem",
                   display: "flex",
-                  alignItems: "center"
-                }}>
+                  alignItems: "center",
+                  justifyContent:
+                    msg.role === "user" ? "flex-end" : "flex-start",
+                  paddingRight: msg.role === "user" ? 0 : 0,
+                }}
+              >
+                {msg.role === "assistant" && (
+                  <span
+                    style={{
+                      marginRight: 8,
+                      fontSize: "1.7rem",
+                      color: theme.accent,
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <FaRobot />
+                  </span>
+                )}
+                <div
+                  style={{
+                    background:
+                      msg.role === "user" ? theme.userMsgBg : theme.botMsgBg,
+                    color:
+                      msg.role === "user" ? theme.userMsgFg : theme.botMsgFg,
+                    padding: "0.75rem 1.2rem",
+                    borderRadius: "18px",
+                    maxWidth: "70%",
+                    boxShadow: darkMode ? "0 1px 6px #0001" : "0 1px 6px #ccc1",
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
                   {msg.content}
                 </div>
                 {msg.role === "user" && (
-                  <span style={{ marginLeft: 8, fontSize: "1.7rem", color: theme.accent, display: "flex", alignItems: "center" }}><FaUserCircle /></span>
+                  <span
+                    style={{
+                      marginLeft: 8,
+                      fontSize: "1.7rem",
+                      color: theme.accent,
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <FaUserCircle />
+                  </span>
                 )}
               </div>
             ))}
             {/* Typing animasyonu */}
             {isTyping && (
-              <div style={{ marginBottom: "1rem", display: "flex", alignItems: "flex-end" }}>
-                <span style={{ marginRight: 8, fontSize: "1.7rem", color: theme.accent, display: "flex", alignItems: "center" }}><FaRobot /></span>
-                <div style={{
-                  background: theme.botMsgBg,
-                  color: theme.botMsgFg,
-                  padding: "0.75rem 1.2rem",
-                  borderRadius: "18px",
-                  maxWidth: "70%",
-                  fontStyle: "italic",
-                  opacity: 0.7,
+              <div
+                style={{
+                  marginBottom: "1rem",
                   display: "flex",
-                  alignItems: "center"
-                }}>
+                  alignItems: "flex-end",
+                }}
+              >
+                <span
+                  style={{
+                    marginRight: 8,
+                    fontSize: "1.7rem",
+                    color: theme.accent,
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <FaRobot />
+                </span>
+                <div
+                  style={{
+                    background: theme.botMsgBg,
+                    color: theme.botMsgFg,
+                    padding: "0.75rem 1.2rem",
+                    borderRadius: "18px",
+                    maxWidth: "70%",
+                    fontStyle: "italic",
+                    opacity: 0.7,
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
                   <span>
                     Chatbot is typing
-                    <span className="typing-dots" style={{ display: "inline-block", marginLeft: 2 }}>
+                    <span
+                      className="typing-dots"
+                      style={{ display: "inline-block", marginLeft: 2 }}
+                    >
                       <span style={{ animation: "blink 1s infinite" }}>.</span>
-                      <span style={{ animation: "blink 1s 0.2s infinite" }}>.</span>
-                      <span style={{ animation: "blink 1s 0.4s infinite" }}>.</span>
+                      <span style={{ animation: "blink 1s 0.2s infinite" }}>
+                        .
+                      </span>
+                      <span style={{ animation: "blink 1s 0.4s infinite" }}>
+                        .
+                      </span>
                     </span>
                   </span>
                 </div>
@@ -142,16 +274,46 @@ function Chat() {
             <div ref={messagesEndRef} />
           </div>
           {/* Soru sorma alanı */}
-          <div style={{ marginTop: "2rem", display: "flex", alignItems: "center" }}>
+          <div
+            style={{ marginTop: "2rem", display: "flex", alignItems: "center" }}
+          >
             <input
-              style={{ padding: "0.75rem", width: "100%", borderRadius: "8px", border: "none", background: theme.inputBg, color: theme.accent, marginRight: "1rem", fontSize: "1.1rem" }}
+              style={{
+                padding: "0.75rem",
+                width: "100%",
+                borderRadius: "8px",
+                border: "none",
+                background: theme.inputBg,
+                color: theme.accent,
+                marginRight: "1rem",
+                fontSize: "1.1rem",
+              }}
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Herhangi bir şey sor"
-              onKeyDown={e => { if (e.key === "Enter") askQuestion(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") askQuestion();
+              }}
               disabled={isTyping}
             />
-            <button onClick={askQuestion} disabled={isTyping || !question.trim()} style={{ padding: "0.75rem 1.5rem", background: theme.btnBg, color: theme.btnFg, border: "none", borderRadius: "8px", fontWeight: "bold", cursor: isTyping || !question.trim() ? "not-allowed" : "pointer", fontSize: "1.3rem", display: "flex", alignItems: "center", gap: 6 }}>
+            <button
+              onClick={askQuestion}
+              disabled={isTyping || !question.trim()}
+              style={{
+                padding: "0.75rem 1.5rem",
+                background: theme.btnBg,
+                color: theme.btnFg,
+                border: "none",
+                borderRadius: "8px",
+                fontWeight: "bold",
+                cursor:
+                  isTyping || !question.trim() ? "not-allowed" : "pointer",
+                fontSize: "1.3rem",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
               <MdSend style={{ marginRight: 4 }} />
               Gönder
             </button>
@@ -186,5 +348,3 @@ function Chat() {
 }
 
 export default Chat;
-
-
