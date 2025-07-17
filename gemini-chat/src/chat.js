@@ -18,19 +18,96 @@ function Chat() {
     setMessages(newMessages);
     setIsTyping(true);
     setQuestion("");
+
     try {
       const res = await fetch("http://localhost:8000/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, messages: newMessages }),
       });
-      const data = await res.json();
-      const updatedMessages = [
-        ...newMessages,
-        { role: "assistant", content: data.response },
-      ];
-      setMessages(updatedMessages);
-    } finally {
+
+      // Check if it's a streaming response
+      const contentType = res.headers.get("content-type");
+
+      if (contentType && contentType.includes("text/event-stream")) {
+        // Handle streaming response
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+
+        let buffer = "";
+
+        // Add empty assistant message immediately when streaming starts
+        const assistantMessageIndex = newMessages.length;
+        setMessages([...newMessages, { role: "assistant", content: "" }]);
+        setIsTyping(false);
+
+        const processChunk = (content) => {
+          console.log("Processing chunk:", JSON.stringify(content)); // Better debug log
+          setMessages((prevMessages) => {
+            const updatedMessages = [...prevMessages];
+            const currentContent =
+              updatedMessages[assistantMessageIndex]?.content || "";
+            const newContent = currentContent + content;
+            updatedMessages[assistantMessageIndex] = {
+              role: "assistant",
+              content: newContent,
+            };
+            console.log("Updated message content:", JSON.stringify(newContent)); // Debug log
+            return updatedMessages;
+          });
+        };
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+
+          // Keep the last incomplete line in buffer
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                console.log(
+                  "Received data type:",
+                  data.type,
+                  "content:",
+                  JSON.stringify(data.content)
+                ); // Debug log
+
+                if (data.type === "chunk" && data.content) {
+                  processChunk(data.content);
+                }
+
+                if (data.type === "end") {
+                  console.log("Stream ended");
+                }
+
+                if (data.type === "error") {
+                  console.error("Stream error:", data.message);
+                  setIsTyping(false);
+                }
+              } catch (e) {
+                console.log("Parse error:", e, "Line:", line);
+              }
+            }
+          }
+        }
+      } else {
+        // Handle regular JSON response (FAISS results)
+        const data = await res.json();
+        const updatedMessages = [
+          ...newMessages,
+          { role: "assistant", content: data.response },
+        ];
+        setMessages(updatedMessages);
+        setIsTyping(false);
+      }
+    } catch (error) {
+      console.error("Error:", error);
       setIsTyping(false);
     }
   };
