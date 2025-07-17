@@ -3,6 +3,85 @@ import { MdDarkMode, MdLightMode, MdSend } from "react-icons/md";
 import { FaUserCircle } from "react-icons/fa";
 import { FaRobot } from "react-icons/fa6";
 
+// Bot cevabını paragraflara ayıran ve temel formatlamaları destekleyen render fonksiyonu
+function renderBotContent(content) {
+  if (!content) return null;
+  // Satırları ayır
+  const lines = content.split(/\n+/);
+  return (
+    <>
+      {lines.map((line, idx) => {
+        // Madde işaretiyle başlıyorsa (başında * veya - varsa)
+        if (/^\s*[*-]/.test(line)) {
+          // Remove bullet, leading/trailing spaces, and replace trailing colon with comma
+          let itemText = line.replace(/^\s*[*-]\s*/, "").replace(/\s*:\s*$/, ",").trim();
+          return (
+            <div key={idx} style={{ display: "flex", alignItems: "flex-start", marginBottom: "0.5em", justifyContent: "flex-start", paddingLeft: "2em", width: "100%" }}>
+              <span style={{ color: "#b2f7ef", fontWeight: "bold", marginRight: 8, fontSize: "1.2em", marginTop: 2, minWidth: "1.2em", textAlign: "left" }}>•</span>
+              <span style={{ wordBreak: "break-word", textAlign: "left", display: "block", width: "100%" }}>{formatInline(itemText)}</span>
+            </div>
+          );
+        }
+        // Normal satır
+        return <p key={idx} style={{ margin: 0, marginBottom: "0.7em", wordBreak: "break-word", textAlign: "left" }}>{formatInline(line)}</p>;
+      })}
+    </>
+  );
+}
+
+// Temel inline formatlama: link, kalın (**text**), italik (*text*)
+function formatInline(text) {
+  // Link: [text](url)
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  // Kalın: **text**
+  const boldRegex = /\*\*([^*]+)\*\*/g;
+  // İtalik: *text*
+  const italicRegex = /\*([^*]+)\*/g;
+
+  let parts = [];
+  let lastIdx = 0;
+  let match;
+  // Linkleri bul
+  while ((match = linkRegex.exec(text))) {
+    if (match.index > lastIdx) parts.push(text.slice(lastIdx, match.index));
+    parts.push(<a key={match.index} href={match[2]} target="_blank" rel="noopener noreferrer" style={{ color: "#4fc3f7", textDecoration: "underline" }}>{match[1]}</a>);
+    lastIdx = match.index + match[0].length;
+  }
+  if (lastIdx < text.length) text = text.slice(lastIdx);
+  else text = "";
+
+  // Kalın ve italik için sırayla uygula
+  let boldParts = [];
+  lastIdx = 0;
+  while ((match = boldRegex.exec(text))) {
+    if (match.index > lastIdx) boldParts.push(text.slice(lastIdx, match.index));
+    boldParts.push(<strong key={"b"+match.index}>{match[1]}</strong>);
+    lastIdx = match.index + match[0].length;
+  }
+  if (lastIdx < text.length) text = text.slice(lastIdx);
+  else text = "";
+
+  let italicParts = [];
+  lastIdx = 0;
+  while ((match = italicRegex.exec(text))) {
+    if (match.index > lastIdx) italicParts.push(text.slice(lastIdx, match.index));
+    italicParts.push(<em key={"i"+match.index}>{match[1]}</em>);
+    lastIdx = match.index + match[0].length;
+  }
+  if (lastIdx < text.length) italicParts.push(text.slice(lastIdx));
+
+  // Parçaları birleştir
+  if (parts.length > 0) {
+    return <>{parts}</>;
+  } else if (boldParts.length > 0) {
+    return <>{boldParts}</>;
+  } else if (italicParts.length > 0) {
+    return <>{italicParts}</>;
+  } else {
+    return text;
+  }
+}
+
 function Chat() {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
@@ -278,9 +357,13 @@ function Chat() {
                     boxShadow: darkMode ? "0 1px 6px #0001" : "0 1px 6px #ccc1",
                     display: "flex",
                     alignItems: "center",
+                    flexDirection: "column",
+                    textAlign: "left"
                   }}
                 >
-                  {msg.content}
+                  {msg.role === "assistant"
+                    ? renderBotContent(msg.content)
+                    : msg.content}
                 </div>
                 {msg.role === "user" && (
                   <span
