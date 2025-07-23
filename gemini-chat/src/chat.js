@@ -14,16 +14,62 @@ function renderBotContent(content) {
         // Madde işaretiyle başlıyorsa (başında * veya - varsa)
         if (/^\s*[*-]/.test(line)) {
           // Remove bullet, leading/trailing spaces, and replace trailing colon with comma
-          let itemText = line.replace(/^\s*[*-]\s*/, "").replace(/\s*:\s*$/, ",").trim();
+          let itemText = line
+            .replace(/^\s*[*-]\s*/, "")
+            .replace(/\s*:\s*$/, ",")
+            .trim();
           return (
-            <div key={idx} style={{ display: "flex", alignItems: "flex-start", marginBottom: "0.5em", justifyContent: "flex-start", paddingLeft: "2em", width: "100%" }}>
-              <span style={{ color: "#b2f7ef", fontWeight: "bold", marginRight: 8, fontSize: "1.2em", marginTop: 2, minWidth: "1.2em", textAlign: "left" }}>•</span>
-              <span style={{ wordBreak: "break-word", textAlign: "left", display: "block", width: "100%" }}>{formatInline(itemText)}</span>
+            <div
+              key={idx}
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                marginBottom: "0.5em",
+                justifyContent: "flex-start",
+                paddingLeft: "2em",
+                width: "100%",
+              }}
+            >
+              <span
+                style={{
+                  color: "#b2f7ef",
+                  fontWeight: "bold",
+                  marginRight: 8,
+                  fontSize: "1.2em",
+                  marginTop: 2,
+                  minWidth: "1.2em",
+                  textAlign: "left",
+                }}
+              >
+                •
+              </span>
+              <span
+                style={{
+                  wordBreak: "break-word",
+                  textAlign: "left",
+                  display: "block",
+                  width: "100%",
+                }}
+              >
+                {formatInline(itemText)}
+              </span>
             </div>
           );
         }
         // Normal satır
-        return <p key={idx} style={{ margin: 0, marginBottom: "0.7em", wordBreak: "break-word", textAlign: "left" }}>{formatInline(line)}</p>;
+        return (
+          <p
+            key={idx}
+            style={{
+              margin: 0,
+              marginBottom: "0.7em",
+              wordBreak: "break-word",
+              textAlign: "left",
+            }}
+          >
+            {formatInline(line)}
+          </p>
+        );
       })}
     </>
   );
@@ -44,7 +90,17 @@ function formatInline(text) {
   // Linkleri bul
   while ((match = linkRegex.exec(text))) {
     if (match.index > lastIdx) parts.push(text.slice(lastIdx, match.index));
-    parts.push(<a key={match.index} href={match[2]} target="_blank" rel="noopener noreferrer" style={{ color: "#4fc3f7", textDecoration: "underline" }}>{match[1]}</a>);
+    parts.push(
+      <a
+        key={match.index}
+        href={match[2]}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: "#4fc3f7", textDecoration: "underline" }}
+      >
+        {match[1]}
+      </a>
+    );
     lastIdx = match.index + match[0].length;
   }
   if (lastIdx < text.length) text = text.slice(lastIdx);
@@ -55,7 +111,7 @@ function formatInline(text) {
   lastIdx = 0;
   while ((match = boldRegex.exec(text))) {
     if (match.index > lastIdx) boldParts.push(text.slice(lastIdx, match.index));
-    boldParts.push(<strong key={"b"+match.index}>{match[1]}</strong>);
+    boldParts.push(<strong key={"b" + match.index}>{match[1]}</strong>);
     lastIdx = match.index + match[0].length;
   }
   if (lastIdx < text.length) text = text.slice(lastIdx);
@@ -64,8 +120,9 @@ function formatInline(text) {
   let italicParts = [];
   lastIdx = 0;
   while ((match = italicRegex.exec(text))) {
-    if (match.index > lastIdx) italicParts.push(text.slice(lastIdx, match.index));
-    italicParts.push(<em key={"i"+match.index}>{match[1]}</em>);
+    if (match.index > lastIdx)
+      italicParts.push(text.slice(lastIdx, match.index));
+    italicParts.push(<em key={"i" + match.index}>{match[1]}</em>);
     lastIdx = match.index + match[0].length;
   }
   if (lastIdx < text.length) italicParts.push(text.slice(lastIdx));
@@ -358,7 +415,7 @@ function Chat() {
                     display: "flex",
                     alignItems: "center",
                     flexDirection: "column",
-                    textAlign: "left"
+                    textAlign: "left",
                   }}
                 >
                   {msg.role === "assistant"
@@ -435,27 +492,59 @@ function Chat() {
           </div>
           {/* Soru sorma alanı */}
           <div
-            style={{ marginTop: "2rem", display: "flex", alignItems: "center" }}
+            style={{
+              marginTop: "2rem",
+              display: "flex",
+              alignItems: "flex-end",
+              position: "relative",
+            }}
           >
-            <input
+            <div
               style={{
-                padding: "0.75rem",
-                width: "100%",
-                borderRadius: "8px",
-                border: "none",
-                background: theme.inputBg,
-                color: theme.accent,
+                flex: 1,
                 marginRight: "1rem",
-                fontSize: "1.1rem",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "flex-end",
               }}
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Herhangi bir şey sor"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") askQuestion();
-              }}
-              disabled={isTyping}
-            />
+            >
+              <textarea
+                ref={(textarea) => {
+                  if (textarea) {
+                    textarea.style.height = "auto";
+                    const newHeight = Math.min(textarea.scrollHeight, 120);
+                    textarea.style.height = newHeight + "px";
+                  }
+                }}
+                style={{
+                  padding: "0.75rem",
+                  width: "100%",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: theme.inputBg,
+                  color: theme.accent,
+                  fontSize: "1.1rem",
+                  resize: "none",
+                  minHeight: "48px",
+                  maxHeight: "120px",
+                  overflow: "auto",
+                  fontFamily: "inherit",
+                  lineHeight: "1.4",
+                  boxSizing: "border-box",
+                }}
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="Herhangi bir şey sor"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    askQuestion();
+                  }
+                }}
+                disabled={isTyping}
+                rows={1}
+              />
+            </div>
             <button
               onClick={askQuestion}
               disabled={isTyping || !question.trim()}
